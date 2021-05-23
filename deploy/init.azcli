@@ -1,0 +1,16 @@
+resourceGroupName="rg-demo-ui"
+
+az group create --name $resourceGroupName --location francecentral
+
+project=blobtos3
+password="Qwertyuiop[]|"
+
+az deployment sub create `
+    --template-file azure.sub.deploy.json `
+    --location francecentral `
+    --parameters project=$project jumpboxPassword=$password
+
+# az webapp config appsetting set 
+#     --name dev-niant-func \
+#     --resource-group $resourceGroupName \
+#     --settings AZURE_TENANT_ID=$tenantId AZURE_SUBSCRIPTION_ID=$subscriptionId
