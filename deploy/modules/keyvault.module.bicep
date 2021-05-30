@@ -38,3 +38,4 @@ module secretsDeployment 'keyvault.secrets.module.bicep' = if (!empty(secrets)) 
 
 output id string = keyVault.id
 output name string = keyVault.name
+output secrets array = secretsDeployment.outputs.secrets

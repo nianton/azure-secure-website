@@ -1,5 +1,5 @@
 param location string = resourceGroup().location
-param project string = 'secwebapp'
+param project string = 'secweb3'
 param environment string = 'dev'
 
 @description('Container to move the files from the scheduled run')
@@ -18,6 +18,9 @@ param functionAppRepoBranch string = 'main'
 @description('Azure Key Vault SKU')
 param keyVaultSku string = 'premium'
 
+@description('Whether to include a Bastion to access the jumphost the deployment')
+param includeBastion bool = true
+
 @allowed([
   'Y1'
   'EP1'
@@ -35,21 +38,24 @@ param jumpboxPassword string
 var resourcePrefix = '${project}-${environment}'
 var resourceNames = {
   vnet: '${resourcePrefix}-vnet'
-  snet1: '${resourcePrefix}-snet-01'
-  snet2: '${resourcePrefix}-snet-02'
-  snet3: '${resourcePrefix}-snet-03'
+  appSnet: '${resourcePrefix}-snet-01'
+  devSnet: '${resourcePrefix}-snet-02'
+  integratedSnet: '${resourcePrefix}-snet-03'
   funcApp: '${resourcePrefix}-func'
+  webApp: '${resourcePrefix}-web'
   keyVault: '${resourcePrefix}-kv'
   serviceBusNamespace: '${resourcePrefix}-sbns'
   dataStorage: 's${toLower(replace(resourcePrefix, '-', ''))}data'
   jumpboxVm: '${substring(resourcePrefix, 0, 10)}-jbvm'
+  bastion: '${resourcePrefix}-bastion'
 }
 
 // Vnet configuration
-var virtualNetwork_CIDR = '10.200.0.0/16'
-var subnet1_CIDR = '10.200.1.0/24'
-var subnet2_CIDR = '10.200.2.0/24'
-var subnet3_CIDR = '10.200.3.0/24'
+var virtualNetwork_CIDR = '10.200.1.0/24'
+var subnet1_CIDR = '10.200.1.0/26'
+var subnet2_CIDR = '10.200.1.64/26'
+var subnet3_CIDR = '10.200.1.128/26'
+var subnet4_CIDR = '10.200.1.192/27'
 
 var secretNames = {
   dataStorageConnectionString: 'dataStorageConnectionString'
@@ -68,47 +74,49 @@ var containerNames = [
   archiveContainerName
 ]
 
-resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
-  name: resourceNames.vnet
-  location: location
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        virtualNetwork_CIDR
-      ]
+module vnet 'modules/vnet.module.bicep' = {
+  name: 'vnet-${resourceNames.vnet}'
+  params: {
+    name: resourceNames.vnet
+    addressPrefix: virtualNetwork_CIDR
+    includeBastion: true
+    location: location
+    tags: defaultTags
+    appSnet: {
+      name: resourceNames.appSnet
+      properties: {
+        addressPrefix: subnet1_CIDR
+        privateEndpointNetworkPolicies: 'Disabled'
+      }
     }
-    subnets: [
-      {
-        name: resourceNames.snet1
-        properties: {
-          addressPrefix: subnet1_CIDR
-          privateEndpointNetworkPolicies: 'Disabled'
-        }
+    devOpsSnet: {
+      name: resourceNames.devSnet
+      properties: {
+        addressPrefix: subnet2_CIDR
       }
-      {
-        name: resourceNames.snet2
-        properties: {
-          addressPrefix: subnet2_CIDR
-          delegations: [
-            {
-              name: 'delegation'
-              properties: {
-                serviceName: 'Microsoft.Web/serverfarms'
-              }
+    }
+    integratedSnet: {
+      name: resourceNames.integratedSnet
+      properties: {
+        addressPrefix: subnet3_CIDR
+        delegations: [
+          {
+            name: 'delegation'
+            properties: {
+              serviceName: 'Microsoft.Web/serverfarms'
             }
-          ]
-          privateEndpointNetworkPolicies: 'Enabled'
-        }
+          }
+        ]
+        privateEndpointNetworkPolicies: 'Enabled'
       }
-      {
-        name: resourceNames.snet3
-        properties: {
-          addressPrefix: subnet3_CIDR
-        }
+    }
+    bastionSnet: {
+      properties: {
+        addressPrefix: subnet4_CIDR
+        privateEndpointNetworkPolicies: 'Disabled'
       }
-    ]
+    }
   }
-  tags: defaultTags
 }
 
 // Storage Account containing the data
@@ -133,7 +141,7 @@ module serviceBus 'modules/servicebus.module.bicep' = {
 // Blob Containers based on the provided naming
 resource containers 'Microsoft.Storage/storageAccounts/blobServices/containers@2019-06-01' = [for containerName in containerNames: {
   name: '${resourceNames.dataStorage}/default/${containerName}'
-  dependsOn:[
+  dependsOn: [
     dataStorage
   ]
 }]
@@ -148,8 +156,6 @@ module funcApp './modules/functionApp.module.bicep' = {
     managedIdentity: true
     tags: defaultTags
     skuName: azureFunctionPlanSkuName
-    // funcDeployBranch: functionAppRepoBranch
-    // funcDeployRepoUrl: functionAppRepoUrl
     funcAppSettings: [
       {
         name: 'DataStorageConnection'
@@ -158,6 +164,22 @@ module funcApp './modules/functionApp.module.bicep' = {
       {
         name: 'ServiceBusConnection'
         value: '@Microsoft.KeyVault(VaultName=${resourceNames.keyVault};SecretName=${secretNames.serviceBusConnectionString})'
+      }
+    ]
+  }
+}
+
+module webApp 'modules/webApp.module.bicep' = {
+  name: 'webApp'
+  params: {
+    location: location
+    name: resourceNames.webApp
+    managedIdentity: true
+    tags: defaultTags
+    appSettings: [
+      {
+        name: 'MySqlConnection'
+        value: '@Microsoft.KeyVault(VaultName=${resourceNames.keyVault};SecretName=${secretNames.mySqlConnectionString})'
       }
     ]
   }
@@ -181,7 +203,7 @@ module keyVault 'modules/keyvault.module.bicep' = {
   name: 'keyVault'
   params: {
     name: resourceNames.keyVault
-    location: location    
+    location: location
     skuName: 'premium'
     tags: defaultTags
     accessPolicies: [
@@ -195,7 +217,7 @@ module keyVault 'modules/keyvault.module.bicep' = {
         }
       }
     ]
-    secrets:[
+    secrets: [
       {
         name: secretNames.dataStorageConnectionString
         value: dataStorage.outputs.connectionString
@@ -212,14 +234,25 @@ module keyVault 'modules/keyvault.module.bicep' = {
   }
 }
 
+module bastion 'modules/bastion.module.bicep' = if (includeBastion) {
+  name: 'bastionDeployment'
+  params: {
+    name: resourceNames.bastion
+    location: location    
+    subnetId: vnet.outputs.bastionSnetId
+  }
+}
+
 module jumpbox 'modules/vmjumpbox.module.bicep' = {
   name: 'jumpbox'
   params: {
-    subnetId: vnet.properties.subnets[2].id
-    location: location
     name: resourceNames.jumpboxVm
+    subnetId: vnet.outputs.devOpsSnetId
+    location: location
     dnsLabelPrefix: resourceNames.jumpboxVm
     adminPassword: jumpboxPassword
+    includePublicIp: true
+    includeVsCode: true
     tags: defaultTags
   }
 }
@@ -230,3 +263,5 @@ output keyVault object = {
   id: keyVault.outputs.id
   name: keyVault.outputs.name
 }
+output bastion object = bastion
+output vnet object = vnet

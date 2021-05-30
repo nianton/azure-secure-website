@@ -1,6 +1,6 @@
 @minLength(3)
 @maxLength(15)
-param name string = 'win-vm'
+param name string
 param location string = resourceGroup().location
 param adminUserName string = 'vmadmin'
 
@@ -9,6 +9,8 @@ param adminPassword string
 param subnetId string
 param tags object = {}
 param dnsLabelPrefix string
+param includePublicIp bool = true
+param includeVsCode bool = true
 
 @allowed([
   '2008-R2-SP1'
@@ -29,7 +31,7 @@ var resourceNames = {
   storageAccount: concat(uniqueString(resourceGroup().id), 'winvm')
   nic: '${name}-nic'
   publicIP: '${name}-pip'
-  networkSecurityGroup: 'default-nsg'  
+  networkSecurityGroup: 'default-nsg'
 }
 
 resource stg 'Microsoft.Storage/storageAccounts@2019-06-01' = {
@@ -40,18 +42,6 @@ resource stg 'Microsoft.Storage/storageAccounts@2019-06-01' = {
     name: 'Standard_LRS'
   }
   kind: 'Storage'
-}
-
-resource pip 'Microsoft.Network/publicIPAddresses@2020-06-01' = {
-  name: resourceNames.publicIP
-  location: location
-  tags: tags
-  properties: {
-    publicIPAllocationMethod: 'Dynamic'
-    dnsSettings: {
-      domainNameLabel: dnsLabelPrefix
-    }
-  }
 }
 
 resource nsg 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
@@ -77,6 +67,33 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
   }
 }
 
+resource pip 'Microsoft.Network/publicIPAddresses@2020-06-01' = if (includePublicIp) {
+  name: resourceNames.publicIP
+  location: location
+  tags: tags
+  properties: {
+    publicIPAllocationMethod: 'Dynamic'
+    dnsSettings: {
+      domainNameLabel: dnsLabelPrefix
+    }
+  }
+}
+
+var nicIpConfigurationDefaults = {
+  privateIPAllocationMethod: 'Dynamic'
+  subnet: {
+    id: subnetId
+  }
+}
+
+var nicIpConfigurationWithPip = {
+  publicIPAddress: {
+    id: pip.id
+  }
+}
+
+var nicIpConfigurationProperties = includePublicIp ? nicIpConfigurationDefaults : union(nicIpConfigurationDefaults, nicIpConfigurationWithPip)
+
 resource nic 'Microsoft.Network/networkInterfaces@2020-06-01' = {
   name: resourceNames.nic
   location: location
@@ -85,15 +102,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2020-06-01' = {
     ipConfigurations: [
       {
         name: 'ipconfig1'
-        properties: {
-          privateIPAllocationMethod: 'Dynamic'
-          publicIPAddress: {
-            id: pip.id
-          }
-          subnet: {
-            id: subnetId
-          }
-        }
+        properties: nicIpConfigurationProperties
       }
     ]
   }
@@ -117,7 +126,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
         publisher: 'MicrosoftWindowsServer'
         offer: 'WindowsServer'
         sku: windowsOSVersion
-        version: 'latest'        
+        version: 'latest'
       }
       osDisk: {
         createOption: 'FromImage'
@@ -126,7 +135,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
         {
           diskSizeGB: 1023
           lun: 0
-          createOption: 'Empty'          
+          createOption: 'Empty'
         }
       ]
     }
@@ -143,6 +152,25 @@ resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
         storageUri: stg.properties.primaryEndpoints.blob
       }
     }
+  }
+}
+
+resource customScriptExtension 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = if (includeVsCode) {
+  name: '${vm.name}/config-app'
+  location: location
+  tags: tags
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.0'
+    autoUpgradeMinorVersion: true
+    settings: {
+      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File ./Install-VSCode.ps1 -EnableContextMenus'
+      fileUris: [
+        'https://raw.githubusercontent.com/PowerShell/vscode-powershell/master/scripts/Install-VSCode.ps1'
+      ]
+    }
+    protectedSettings: {}
   }
 }
 
