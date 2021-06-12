@@ -25,15 +25,6 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
       - name: Bicep Build
         uses: aliencube/bicep-build-actions@v0.3
         with:
@@ -47,4 +38,5 @@ jobs:
         uses: EndBug/add-and-commit@v7.2.1
         with:
           # Arguments for the git add command
-          add: deploy/azure.deploy.json
+          add: deploy/azure.deploy.json deploy/azure.sub.deploy.json
+          message: Built main ARM templates via GitHub Action CI
