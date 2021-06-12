@@ -41,3 +41,10 @@ jobs:
           files: deploy/azure.deploy.bicep deploy/azure.sub.deploy.bicep
           # Version of the bicep CLI. It can be the exact version (eg. `v0.3.255`), wildcard (eg. `v0.3.x`) or `latest`. If omitted, `latest` is set as default.
           version: latest # optional, default is latest
+      - name: Add & Commit
+        # You may pin to the exact commit or the version.
+        # uses: EndBug/add-and-commit@2bdc0a61a03738a1d1bda24d566ad0dbe3083d87
+        uses: EndBug/add-and-commit@v7.2.1
+        with:
+          # Arguments for the git add command
+          add: deploy/azure.deploy.json
