@@ -35,13 +35,13 @@ var subnetConfigs = includeBastion ? [
   defaultSnetConfig
   appSnetConfig
   devOpsSnetConfig
-  integratedSnet
+  integratedSnetConfig
   bastionSnetConfig
 ] : [
   defaultSnetConfig
   appSnetConfig
   devOpsSnetConfig
-  integratedSnet
+  integratedSnetConfig
 ]
 
 resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
