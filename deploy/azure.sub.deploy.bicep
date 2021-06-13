@@ -3,12 +3,12 @@ targetScope = 'subscription'
 @description('Name of the resource group to create the resources in. Leave empty to use naming convention {project}-{environment}-rg.')
 param resourceGroupName string = ''
 param location string = 'westeurope'
-param project string = 'secweb2'
+param project string = 'secweb6'
 param environment string = 'dev'
 
 @secure()
 @description('Jumpbox VM password')
-param jumpboxPassword string = 'Qwertyuiop[]|'
+param jumpboxPassword string
 
 var rgName = empty(resourceGroupName) ? '${project}-${environment}-rg' : resourceGroupName
 

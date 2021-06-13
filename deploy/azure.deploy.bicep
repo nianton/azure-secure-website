@@ -11,6 +11,9 @@ param functionAppRepoUrl string = 'https://github.com/nianton/azstorage-to-s3'
 @description('The function application repository branch to be deployed')
 param functionAppRepoBranch string = 'main'
 
+@description('Whether to use private endpoints to expose the Azure Functions and WebApp')
+param usePrivateLinks bool = true
+
 @allowed([
   'standard'
   'premium'
@@ -36,17 +39,19 @@ param jumpboxPassword string
 
 // Resource names - establish naming convention
 var resourcePrefix = '${project}-${environment}'
+
 var resourceNames = {
   vnet: '${resourcePrefix}-vnet'
-  appSnet: '${resourcePrefix}-snet-01'
-  devSnet: '${resourcePrefix}-snet-02'
-  integratedSnet: '${resourcePrefix}-snet-03'
+  defaultSnet: '${resourcePrefix}-snet-01'
+  appSnet: '${resourcePrefix}-snet-02'
+  devSnet: '${resourcePrefix}-snet-03'
+  integratedSnet: '${resourcePrefix}-snet-04'
   funcApp: '${resourcePrefix}-func'
   webApp: '${resourcePrefix}-web'
   keyVault: '${resourcePrefix}-kv'
   serviceBusNamespace: '${resourcePrefix}-sbns'
   dataStorage: 's${toLower(replace(resourcePrefix, '-', ''))}data'
-  jumpboxVm: '${substring(resourcePrefix, 0, 10)}-jbvm'
+  jumpboxVm: length(resourcePrefix) > 12 ? '${substring(resourcePrefix, 0, 12)}-vm' : '${resourcePrefix}-vm'
   bastion: '${resourcePrefix}-bastion'
 }
 
@@ -56,6 +61,7 @@ var subnet1_CIDR = '10.200.1.0/26'
 var subnet2_CIDR = '10.200.1.64/26'
 var subnet3_CIDR = '10.200.1.128/26'
 var subnet4_CIDR = '10.200.1.192/27'
+var subnet5_CIDR = '10.200.1.224/27'
 
 var secretNames = {
   dataStorageConnectionString: 'dataStorageConnectionString'
@@ -82,23 +88,29 @@ module vnet 'modules/vnet.module.bicep' = {
     includeBastion: true
     location: location
     tags: defaultTags
+    defaultSnet: {
+      name: resourceNames.defaultSnet
+      properties: {
+        addressPrefix: subnet1_CIDR
+      }
+    }
     appSnet: {
       name: resourceNames.appSnet
       properties: {
-        addressPrefix: subnet1_CIDR
+        addressPrefix: subnet2_CIDR
         privateEndpointNetworkPolicies: 'Disabled'
       }
     }
     devOpsSnet: {
       name: resourceNames.devSnet
       properties: {
-        addressPrefix: subnet2_CIDR
+        addressPrefix: subnet3_CIDR
       }
     }
     integratedSnet: {
       name: resourceNames.integratedSnet
       properties: {
-        addressPrefix: subnet3_CIDR
+        addressPrefix: subnet4_CIDR
         delegations: [
           {
             name: 'delegation'
@@ -112,7 +124,7 @@ module vnet 'modules/vnet.module.bicep' = {
     }
     bastionSnet: {
       properties: {
-        addressPrefix: subnet4_CIDR
+        addressPrefix: subnet5_CIDR
         privateEndpointNetworkPolicies: 'Disabled'
       }
     }
@@ -181,7 +193,46 @@ module webApp 'modules/webApp.module.bicep' = {
         name: 'MySqlConnection'
         value: '@Microsoft.KeyVault(VaultName=${resourceNames.keyVault};SecretName=${secretNames.mySqlConnectionString})'
       }
+      {
+        name: 'DataStorageConnection'
+        value: '@Microsoft.KeyVault(VaultName=${resourceNames.keyVault};SecretName=${secretNames.dataStorageConnectionString})'
+      }
+      {
+        name: 'ServiceBusConnection'
+        value: '@Microsoft.KeyVault(VaultName=${resourceNames.keyVault};SecretName=${secretNames.serviceBusConnectionString})'
+      }
     ]
+  }
+}
+
+resource privateDNSZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.azurewebsites.net'
+  location: 'global'
+}
+
+module webAppPrivateEndpoint 'modules/privateEndpoint.module.bicep' = if (usePrivateLinks) {
+  name: 'webapp-privateEndpoint'
+  params: {
+    name: '${resourceNames.webApp}-pe'
+    location: location
+    tags: defaultTags
+    privateDnsZoneId: privateDNSZone.id
+    privateLinkServiceId: webApp.outputs.id
+    subnetId: vnet.outputs.appSnetId
+    subResource: 'sites'
+  }
+}
+
+module funcPrivateEndpoint 'modules/privateEndpoint.module.bicep' = if (usePrivateLinks) {
+  name: 'funcapp-privateEndpoint'
+  params: {
+    name: '${resourceNames.funcApp}-pe'
+    location: location
+    tags: defaultTags
+    privateDnsZoneId: privateDNSZone.id
+    privateLinkServiceId: funcApp.outputs.id
+    subnetId: vnet.outputs.appSnetId
+    subResource: 'sites'
   }
 }
 
@@ -204,12 +255,21 @@ module keyVault 'modules/keyvault.module.bicep' = {
   params: {
     name: resourceNames.keyVault
     location: location
-    skuName: 'premium'
+    skuName: keyVaultSku
     tags: defaultTags
     accessPolicies: [
       {
         tenantId: funcApp.outputs.identity.tenantId
         objectId: funcApp.outputs.identity.principalId
+        permissions: {
+          secrets: [
+            'get'
+          ]
+        }
+      }
+      {
+        tenantId: webApp.outputs.identity.tenantId
+        objectId: webApp.outputs.identity.principalId
         permissions: {
           secrets: [
             'get'

@@ -1,13 +1,19 @@
 param name string
 param location string = resourceGroup().location
 param tags object = {}
-param addressPrefix string = ''
+param addressPrefix string
 param includeBastion bool = true
 
+param defaultSnet object
 param appSnet object
 param devOpsSnet object
 param bastionSnet object
 param integratedSnet object
+
+
+var defaultSnetConfig = union({
+  name: '${name}-default-snet'
+}, defaultSnet)
 
 var appSnetConfig = union({
   name: '${name}-app-snet'
@@ -22,15 +28,17 @@ var bastionSnetConfig = union(bastionSnet, {
 })
 
 var integratedSnetConfig = union({
-  name: '${name}-intgtr-snet'
+  name: '${name}-integration-snet'
 }, integratedSnet)
 
 var subnetConfigs = includeBastion ? [
+  defaultSnetConfig
   appSnetConfig
   devOpsSnetConfig
   integratedSnet
   bastionSnetConfig
 ] : [
+  defaultSnetConfig
   appSnetConfig
   devOpsSnetConfig
   integratedSnet
@@ -51,7 +59,8 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
 }
 
 output vnetId string = vnet.id
-output appSnetId string = vnet.properties.subnets[0].id
-output devOpsSnetId string = vnet.properties.subnets[1].id
-output integratedSnetId string = vnet.properties.subnets[2].id
-output bastionSnetId string = includeBastion ? vnet.properties.subnets[3].id : json('null')
+output defaultSnetId string = vnet.properties.subnets[0].id
+output appSnetId string = vnet.properties.subnets[1].id
+output devOpsSnetId string = vnet.properties.subnets[2].id
+output integratedSnetId string = vnet.properties.subnets[3].id
+output bastionSnetId string = includeBastion ? vnet.properties.subnets[4].id : json('null')

@@ -28,20 +28,19 @@ param windowsOSVersion string = '2019-Datacenter'
 param vmSize string = 'Standard_D2_v3'
 
 var resourceNames = {
-  storageAccount: concat(uniqueString(resourceGroup().id), 'winvm')
+  storageAccount: 's${name}'
   nic: '${name}-nic'
   publicIP: '${name}-pip'
   networkSecurityGroup: 'default-nsg'
 }
 
-resource stg 'Microsoft.Storage/storageAccounts@2019-06-01' = {
-  name: resourceNames.storageAccount
-  location: location
-  tags: tags
-  sku: {
-    name: 'Standard_LRS'
+module stg 'storage.module.bicep' = {
+  name: 'storageAccount-${resourceNames.storageAccount}'
+  params: {
+    name: resourceNames.storageAccount
+    location: location
+    tags: tags
   }
-  kind: 'Storage'
 }
 
 resource nsg 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
@@ -149,7 +148,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
     diagnosticsProfile: {
       bootDiagnostics: {
         enabled: true
-        storageUri: stg.properties.primaryEndpoints.blob
+        storageUri: stg.outputs.primaryEndpoints.blob
       }
     }
   }
@@ -174,4 +173,4 @@ resource customScriptExtension 'Microsoft.Compute/virtualMachines/extensions@202
   }
 }
 
-output hostname string = pip.properties.dnsSettings.fqdn
+output hostname string = includePublicIp ? pip.properties.dnsSettings.fqdn : json('null')
