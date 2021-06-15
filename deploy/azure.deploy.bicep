@@ -250,6 +250,24 @@ module mysql 'modules/mysql.module.bicep' = {
   }
 }
 
+resource mySqlPrivateDNSZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.mysql.database.azure.com'
+  location: 'global'
+}
+
+module mySqlPrivateEndpoint 'modules/privateEndpoint.module.bicep' = if (usePrivateLinks) {
+  name: 'mysql-privateEndpoint'
+  params: {
+    name: '${resourcePrefix}-dbsrv-pe'
+    location: location
+    tags: defaultTags
+    privateDnsZoneId: mySqlPrivateDNSZone.id
+    privateLinkServiceId: mysql.outputs.mysqlServerId
+    subnetId: vnet.outputs.appSnetId
+    subResource: 'mysqlServer'
+  }
+}
+
 module keyVault 'modules/keyvault.module.bicep' = {
   name: 'keyVault'
   params: {

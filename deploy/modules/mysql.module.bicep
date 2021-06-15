@@ -97,4 +97,5 @@ resource database 'Microsoft.DBForMySQL/servers/databases@2017-12-01-preview' = 
   }
 }
 
+output mysqlServerId string = dbServer.id
 output connectionString string = 'Database=${database.name}};Data Source=${dbServer.properties.fullyQualifiedDomainName};User Id=${adminLogin}@${dbServer.name};Password=${adminPassword}'
