@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.63.48766",
-      "templateHash": "3665325187515188211"
+      "templateHash": "2040654088596440420"
     }
   },
   "parameters": {
@@ -20,6 +20,9 @@
     "environment": {
       "type": "string",
       "defaultValue": "dev"
+    },
+    "naming": {
+      "type": "object"
     },
     "archiveContainerName": {
       "type": "string",
@@ -89,20 +92,21 @@
   },
   "functions": [],
   "variables": {
-    "resourcePrefix": "[format('{0}-{1}', parameters('project'), parameters('environment'))]",
     "resourceNames": {
-      "vnet": "[format('{0}-vnet', variables('resourcePrefix'))]",
-      "defaultSnet": "[format('{0}-snet-01', variables('resourcePrefix'))]",
-      "appSnet": "[format('{0}-snet-02', variables('resourcePrefix'))]",
-      "devSnet": "[format('{0}-snet-03', variables('resourcePrefix'))]",
-      "integratedSnet": "[format('{0}-snet-04', variables('resourcePrefix'))]",
-      "funcApp": "[format('{0}-func', variables('resourcePrefix'))]",
-      "webApp": "[format('{0}-web', variables('resourcePrefix'))]",
-      "keyVault": "[format('{0}-kv', variables('resourcePrefix'))]",
-      "serviceBusNamespace": "[format('{0}-sbns', variables('resourcePrefix'))]",
-      "dataStorage": "[format('s{0}data', toLower(replace(variables('resourcePrefix'), '-', '')))]",
-      "jumpboxVm": "[if(greater(length(variables('resourcePrefix')), 12), format('{0}-vm', substring(variables('resourcePrefix'), 0, 12)), format('{0}-vm', variables('resourcePrefix')))]",
-      "bastion": "[format('{0}-bastion', variables('resourcePrefix'))]"
+      "vnet": "[parameters('naming').virtualNetwork.name]",
+      "defaultSnet": "[format('{0}-01', parameters('naming').subnet.name)]",
+      "appSnet": "[format('{0}-02', parameters('naming').subnet.name)]",
+      "devSnet": "[format('{0}-03', parameters('naming').subnet.name)]",
+      "integratedSnet": "[format('{0}-04', parameters('naming').subnet.name)]",
+      "funcApp": "[parameters('naming').functionApp.name]",
+      "webApp": "[parameters('naming').appService.name]",
+      "keyVault": "[parameters('naming').keyVault.name]",
+      "serviceBusNamespace": "[parameters('naming').serviceBusNamespace.name]",
+      "dataStorage": "[format('{0}data', parameters('naming').storageAccount.name)]",
+      "jumpboxVm": "[parameters('naming').virtualMachine.name]",
+      "bastion": "[parameters('naming').bastionHost.name]",
+      "mysqlServer": "[parameters('naming').mysqlServer.name]",
+      "mysqlDatabase": "[parameters('naming').mysqlDatabase.name]"
     },
     "virtualNetwork_CIDR": "10.200.1.0/24",
     "subnet1_CIDR": "10.200.1.0/26",
@@ -140,6 +144,12 @@
       "type": "Microsoft.Network/privateDnsZones",
       "apiVersion": "2020-06-01",
       "name": "privatelink.azurewebsites.net",
+      "location": "global"
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "privatelink.mysql.database.azure.com",
       "location": "global"
     },
     {
@@ -587,7 +597,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.4.63.48766",
-              "templateHash": "602882585203947754"
+              "templateHash": "12577081401718477659"
             }
           },
           "parameters": {
@@ -648,9 +658,9 @@
           "functions": [],
           "variables": {
             "skuTier": "[if(equals(parameters('skuName'), 'Y1'), 'Dynamic', 'Elastic')]",
-            "funcAppServicePlanName": "[format('{0}-asp', parameters('name'))]",
+            "funcAppServicePlanName": "[format('plan-{0}', parameters('name'))]",
             "funcStorageName": "[format('s{0}', replace(parameters('name'), '-', ''))]",
-            "funcAppInsName": "[format('{0}-appins', parameters('name'))]",
+            "funcAppInsName": "[format('appins-{0}', parameters('name'))]",
             "createSourceControl": "[not(empty(parameters('funcDeployRepoUrl')))]",
             "createNetworkConfig": "[not(empty(parameters('subnetIdForIntegration')))]"
           },
@@ -873,7 +883,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.4.63.48766",
-                      "templateHash": "8518710032272609639"
+                      "templateHash": "11509588609169201770"
                     }
                   },
                   "parameters": {
@@ -894,7 +904,7 @@
                   },
                   "functions": [],
                   "variables": {
-                    "workspaceName": "[format('{0}-lawp', parameters('name'))]"
+                    "workspaceName": "[format('log-{0}', parameters('name'))]"
                   },
                   "resources": [
                     {
@@ -1024,7 +1034,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.4.63.48766",
-              "templateHash": "1705316852387947137"
+              "templateHash": "11977878124634736048"
             }
           },
           "parameters": {
@@ -1075,8 +1085,8 @@
           "functions": [],
           "variables": {
             "skuTier": "[if(equals(substring(parameters('skuName'), 0, 1), 'S'), 'Standard', 'PremiumV3')]",
-            "webAppServicePlanName": "[format('{0}-asp', parameters('name'))]",
-            "webAppInsName": "[format('{0}-appins', parameters('name'))]",
+            "webAppServicePlanName": "[format('plan-{0}', parameters('name'))]",
+            "webAppInsName": "[format('appins-{0}', parameters('name'))]",
             "createSourceControl": "[not(empty(parameters('appDeployRepoUrl')))]",
             "createNetworkConfig": "[not(empty(parameters('subnetIdForIntegration')))]"
           },
@@ -1169,7 +1179,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.4.63.48766",
-                      "templateHash": "8518710032272609639"
+                      "templateHash": "11509588609169201770"
                     }
                   },
                   "parameters": {
@@ -1190,7 +1200,7 @@
                   },
                   "functions": [],
                   "variables": {
-                    "workspaceName": "[format('{0}-lawp', parameters('name'))]"
+                    "workspaceName": "[format('log-{0}', parameters('name'))]"
                   },
                   "resources": [
                     {
@@ -1310,7 +1320,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.4.63.48766",
-              "templateHash": "1878935458944930344"
+              "templateHash": "14776052872749807973"
             }
           },
           "parameters": {
@@ -1349,7 +1359,7 @@
           },
           "functions": [],
           "variables": {
-            "privateLinkConnectionName": "[format('{0}-prvlnk', parameters('name'))]"
+            "privateLinkConnectionName": "[format('prvlnk-{0}', parameters('name'))]"
           },
           "resources": [
             {
@@ -1442,7 +1452,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.4.63.48766",
-              "templateHash": "1878935458944930344"
+              "templateHash": "14776052872749807973"
             }
           },
           "parameters": {
@@ -1481,7 +1491,7 @@
           },
           "functions": [],
           "variables": {
-            "privateLinkConnectionName": "[format('{0}-prvlnk', parameters('name'))]"
+            "privateLinkConnectionName": "[format('prvlnk-{0}', parameters('name'))]"
           },
           "resources": [
             {
@@ -1544,8 +1554,11 @@
         },
         "mode": "Incremental",
         "parameters": {
-          "namePrefix": {
-            "value": "[variables('resourcePrefix')]"
+          "name": {
+            "value": "[variables('resourceNames').mysqlServer]"
+          },
+          "dbName": {
+            "value": "[variables('resourceNames').mysqlDatabase]"
           },
           "location": {
             "value": "[parameters('location')]"
@@ -1576,11 +1589,14 @@
             "_generator": {
               "name": "bicep",
               "version": "0.4.63.48766",
-              "templateHash": "15485691522956751278"
+              "templateHash": "14351942416009672004"
             }
           },
           "parameters": {
-            "namePrefix": {
+            "name": {
+              "type": "string"
+            },
+            "dbName": {
               "type": "string"
             },
             "location": {
@@ -1655,17 +1671,11 @@
             }
           },
           "functions": [],
-          "variables": {
-            "resourceNames": {
-              "server": "[format('{0}-dbsrv', parameters('namePrefix'))]",
-              "database": "[format('{0}-db', parameters('namePrefix'))]"
-            }
-          },
           "resources": [
             {
               "type": "Microsoft.DBForMySQL/servers",
               "apiVersion": "2017-12-01-preview",
-              "name": "[variables('resourceNames').server]",
+              "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
               "sku": {
@@ -1691,36 +1701,172 @@
             {
               "type": "Microsoft.DBForMySQL/servers/firewallRules",
               "apiVersion": "2017-12-01-preview",
-              "name": "[format('{0}/allowAzureIPs', variables('resourceNames').server)]",
+              "name": "[format('{0}/allowAzureIPs', parameters('name'))]",
               "properties": {
                 "startIpAddress": "0.0.0.0",
                 "endIpAddress": "0.0.0.0"
               },
               "dependsOn": [
-                "[resourceId('Microsoft.DBForMySQL/servers', variables('resourceNames').server)]"
+                "[resourceId('Microsoft.DBForMySQL/servers', parameters('name'))]"
               ]
             },
             {
               "type": "Microsoft.DBForMySQL/servers/databases",
               "apiVersion": "2017-12-01-preview",
-              "name": "[format('{0}/{1}', variables('resourceNames').server, variables('resourceNames').database)]",
+              "name": "[format('{0}/{1}', parameters('name'), parameters('dbName'))]",
               "properties": {
                 "charset": "utf8",
                 "collation": "utf8_general_ci"
               },
               "dependsOn": [
-                "[resourceId('Microsoft.DBForMySQL/servers', variables('resourceNames').server)]"
+                "[resourceId('Microsoft.DBForMySQL/servers', parameters('name'))]"
               ]
             }
           ],
           "outputs": {
+            "mysqlServerId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.DBForMySQL/servers', parameters('name'))]"
+            },
             "connectionString": {
               "type": "string",
-              "value": "[format('Database={0}}};Data Source={1};User Id={2}@{3};Password={4}', format('{0}/{1}', variables('resourceNames').server, variables('resourceNames').database), reference(resourceId('Microsoft.DBForMySQL/servers', variables('resourceNames').server)).fullyQualifiedDomainName, parameters('adminLogin'), variables('resourceNames').server, parameters('adminPassword'))]"
+              "value": "[format('Database={0}}};Data Source={1};User Id={2}@{3};Password={4}', format('{0}/{1}', parameters('name'), parameters('dbName')), reference(resourceId('Microsoft.DBForMySQL/servers', parameters('name'))).fullyQualifiedDomainName, parameters('adminLogin'), parameters('name'), parameters('adminPassword'))]"
             }
           }
         }
       }
+    },
+    {
+      "condition": "[parameters('usePrivateLinks')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "name": "mysql-privateEndpoint",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[format('pe-{0}', parameters('naming').mysqlServer.name)]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('defaultTags')]"
+          },
+          "privateDnsZoneId": {
+            "value": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.mysql.database.azure.com')]"
+          },
+          "privateLinkServiceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'mysql'), '2019-10-01').outputs.mysqlServerId.value]"
+          },
+          "subnetId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('vnet-{0}', variables('resourceNames').vnet)), '2019-10-01').outputs.appSnetId.value]"
+          },
+          "subResource": {
+            "value": "mysqlServer"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.4.63.48766",
+              "templateHash": "14776052872749807973"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            },
+            "subnetId": {
+              "type": "string"
+            },
+            "privateLinkServiceId": {
+              "type": "string"
+            },
+            "privateDnsZoneId": {
+              "type": "string"
+            },
+            "subResource": {
+              "type": "string",
+              "allowedValues": [
+                "sites",
+                "sqlServer",
+                "mysqlServer",
+                "blob",
+                "file",
+                "queue",
+                "redisCache",
+                "namespace"
+              ]
+            }
+          },
+          "functions": [],
+          "variables": {
+            "privateLinkConnectionName": "[format('prvlnk-{0}', parameters('name'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2020-06-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "subnet": {
+                  "id": "[parameters('subnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "[variables('privateLinkConnectionName')]",
+                    "properties": {
+                      "privateLinkServiceId": "[parameters('privateLinkServiceId')]",
+                      "groupIds": [
+                        "[parameters('subResource')]"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2020-06-01",
+              "name": "[format('{0}/dnsgroupname', parameters('name'))]",
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "config1",
+                    "properties": {
+                      "privateDnsZoneId": "[parameters('privateDnsZoneId')]"
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', parameters('name'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'mysql')]",
+        "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.mysql.database.azure.com')]",
+        "[resourceId('Microsoft.Resources/deployments', format('vnet-{0}', variables('resourceNames').vnet))]"
+      ]
     },
     {
       "type": "Microsoft.Resources/deployments",
@@ -1790,7 +1936,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.4.63.48766",
-              "templateHash": "13921307430740457253"
+              "templateHash": "4800819199818858487"
             }
           },
           "parameters": {
@@ -1870,7 +2016,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.4.63.48766",
-                      "templateHash": "2976361438035052054"
+                      "templateHash": "17958901183912807871"
                     }
                   },
                   "parameters": {
@@ -1908,7 +2054,8 @@
                           "id": "[resourceId('Microsoft.KeyVault/vaults/secrets', split(format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].name), '/')[0], split(format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].name), '/')[1])]",
                           "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].name)]",
                           "type": "Microsoft.KeyVault/vaults/secrets",
-                          "props": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', split(format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].name), '/')[0], split(format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].name), '/')[1]))]"
+                          "props": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', split(format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].name), '/')[0], split(format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].name), '/')[1]))]",
+                          "reference": "[format('@Microsoft.KeyVault(VaultName={0};SecretName:{1}', parameters('keyVaultName'), format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].name))]"
                         }
                       }
                     }
@@ -2086,7 +2233,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.4.63.48766",
-              "templateHash": "1226667574613687293"
+              "templateHash": "16085190339981510703"
             }
           },
           "parameters": {
@@ -2151,9 +2298,9 @@
           "functions": [],
           "variables": {
             "resourceNames": {
-              "storageAccount": "[format('s{0}', parameters('name'))]",
-              "nic": "[format('{0}-nic', parameters('name'))]",
-              "publicIP": "[format('{0}-pip', parameters('name'))]",
+              "storageAccount": "[format('st{0}', parameters('name'))]",
+              "nic": "[format('nic-{0}', parameters('name'))]",
+              "publicIP": "[format('pip-{0}', parameters('name'))]",
               "networkSecurityGroup": "default-nsg"
             },
             "nicIpConfigurationDefaults": {
