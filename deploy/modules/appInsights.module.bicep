@@ -3,7 +3,7 @@ param project string
 param location string
 param tags object = {}
 
-var workspaceName = '${name}-lawp'
+var workspaceName = 'log-${name}'
 
 resource laWorkspace 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   location: location

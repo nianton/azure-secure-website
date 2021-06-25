@@ -1,4 +1,5 @@
-param namePrefix string
+param name string
+param dbName string
 param location string = resourceGroup().location
 param adminLogin string
 param tags object = {}
@@ -51,13 +52,8 @@ param skuFamily string = 'Gen5'
 ])
 param mySQLVersion string
 
-var resourceNames = {
-  server: '${namePrefix}-dbsrv'
-  database: '${namePrefix}-db'
-}
-
 resource dbServer 'Microsoft.DBForMySQL/servers@2017-12-01-preview' = {
-  name: resourceNames.server
+  name: name
   location: location
   tags: tags
   sku: {
@@ -90,7 +86,7 @@ resource firewallRules 'Microsoft.DBForMySQL/servers/firewallRules@2017-12-01-pr
 }
 
 resource database 'Microsoft.DBForMySQL/servers/databases@2017-12-01-preview' = {
-  name: '${dbServer.name}/${resourceNames.database}'  
+  name: '${dbServer.name}/${dbName}'  
   properties: {
     charset: 'utf8'
     collation: 'utf8_general_ci'

@@ -15,4 +15,5 @@ output secrets array = [for (item, i) in secrets: {
   name: keyVaultSecrets[i].name
   type: keyVaultSecrets[i].type
   props: keyVaultSecrets[i].properties
+  reference: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName:${keyVaultSecrets[i].name}'
 }]

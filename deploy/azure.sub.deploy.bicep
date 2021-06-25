@@ -10,11 +10,22 @@ param environment string = 'dev'
 @description('Jumpbox VM password')
 param jumpboxPassword string
 
-var rgName = empty(resourceGroupName) ? '${project}-${environment}-rg' : resourceGroupName
+var rgName = empty(resourceGroupName) ? 'rg-${project}-${environment}' : resourceGroupName
 
 resource group 'Microsoft.Resources/resourceGroups@2020-06-01' = {
   name: rgName
   location: location
+}
+
+module naming 'modules/naming.module.bicep' = {
+  scope: resourceGroup(group.name)
+  name: 'NamingDeployment'
+  params: {
+    suffix: [
+      project
+      environment
+    ]
+  }
 }
 
 module appDeployment './azure.deploy.bicep' = {
@@ -25,5 +36,6 @@ module appDeployment './azure.deploy.bicep' = {
     environment: environment
     project: project
     jumpboxPassword: jumpboxPassword
+    naming: naming.outputs.names
   }
 }

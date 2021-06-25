@@ -11,6 +11,6 @@ az deployment sub create `
     --parameters project=$project jumpboxPassword=$password
 
 # az webapp config appsetting set 
-#     --name dev-niant-func \
+#     --name dev-niant-env \
 #     --resource-group $resourceGroupName \
 #     --settings AZURE_TENANT_ID=$tenantId AZURE_SUBSCRIPTION_ID=$subscriptionId

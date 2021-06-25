@@ -19,8 +19,8 @@ param appDeployBranch string = ''
 param subnetIdForIntegration string = ''
 
 var skuTier =  substring(skuName, 0, 1) == 'S' ? 'Standard' : 'PremiumV3'
-var webAppServicePlanName = '${name}-asp'
-var webAppInsName = '${name}-appins'
+var webAppServicePlanName = 'plan-${name}'
+var webAppInsName = 'appins-${name}'
 var createSourceControl = !empty(appDeployRepoUrl)
 var createNetworkConfig = !empty(subnetIdForIntegration)
 

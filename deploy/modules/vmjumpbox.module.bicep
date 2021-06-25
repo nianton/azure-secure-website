@@ -28,9 +28,9 @@ param windowsOSVersion string = '2019-Datacenter'
 param vmSize string = 'Standard_D2_v3'
 
 var resourceNames = {
-  storageAccount: 's${name}'
-  nic: '${name}-nic'
-  publicIP: '${name}-pip'
+  storageAccount: 'st${name}'
+  nic: 'nic-${name}'
+  publicIP: 'pip-${name}'
   networkSecurityGroup: 'default-nsg'
 }
 

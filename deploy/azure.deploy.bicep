@@ -1,6 +1,7 @@
 param location string = resourceGroup().location
 param project string = 'secweb3'
 param environment string = 'dev'
+param naming object
 
 @description('Container to move the files from the scheduled run')
 param archiveContainerName string = 'archive'
@@ -38,21 +39,21 @@ param azureFunctionPlanSkuName string = 'EP1'
 param jumpboxPassword string
 
 // Resource names - establish naming convention
-var resourcePrefix = '${project}-${environment}'
-
 var resourceNames = {
-  vnet: '${resourcePrefix}-vnet'
-  defaultSnet: '${resourcePrefix}-snet-01'
-  appSnet: '${resourcePrefix}-snet-02'
-  devSnet: '${resourcePrefix}-snet-03'
-  integratedSnet: '${resourcePrefix}-snet-04'
-  funcApp: '${resourcePrefix}-func'
-  webApp: '${resourcePrefix}-web'
-  keyVault: '${resourcePrefix}-kv'
-  serviceBusNamespace: '${resourcePrefix}-sbns'
-  dataStorage: 's${toLower(replace(resourcePrefix, '-', ''))}data'
-  jumpboxVm: length(resourcePrefix) > 12 ? '${substring(resourcePrefix, 0, 12)}-vm' : '${resourcePrefix}-vm'
-  bastion: '${resourcePrefix}-bastion'
+  vnet: naming.virtualNetwork.name
+  defaultSnet: '${naming.subnet.name}-01'
+  appSnet: '${naming.subnet.name}-02'
+  devSnet: '${naming.subnet.name}-03'
+  integratedSnet: '${naming.subnet.name}-04'
+  funcApp: naming.functionApp.name
+  webApp: naming.appService.name
+  keyVault: naming.keyVault.name
+  serviceBusNamespace: naming.serviceBusNamespace.name
+  dataStorage: '${naming.storageAccount.name}data'
+  jumpboxVm: naming.virtualMachine.name
+  bastion: naming.bastionHost.name
+  mysqlServer: naming.mysqlServer.name
+  mysqlDatabase: naming.mysqlDatabase.name
 }
 
 // Vnet configuration
@@ -239,7 +240,8 @@ module funcPrivateEndpoint 'modules/privateEndpoint.module.bicep' = if (usePriva
 module mysql 'modules/mysql.module.bicep' = {
   name: 'mysql'
   params: {
-    namePrefix: resourcePrefix
+    name: resourceNames.mysqlServer
+    dbName: resourceNames.mysqlDatabase
     location: location
     tags: defaultTags
     adminLogin: 'dbuser'
@@ -258,7 +260,7 @@ resource mySqlPrivateDNSZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
 module mySqlPrivateEndpoint 'modules/privateEndpoint.module.bicep' = if (usePrivateLinks) {
   name: 'mysql-privateEndpoint'
   params: {
-    name: '${resourcePrefix}-dbsrv-pe'
+    name: 'pe-${naming.mysqlServer.name}'
     location: location
     tags: defaultTags
     privateDnsZoneId: mySqlPrivateDNSZone.id

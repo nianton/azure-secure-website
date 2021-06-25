@@ -17,7 +17,7 @@ param privateDnsZoneId string
 ])
 param subResource string
 
-var privateLinkConnectionName = '${name}-prvlnk'
+var privateLinkConnectionName = 'prvlnk-${name}'
 
 resource privateEndpoint 'Microsoft.Network/privateEndpoints@2020-06-01' = {
   name: name

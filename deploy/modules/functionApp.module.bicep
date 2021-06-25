@@ -20,9 +20,9 @@ param subnetIdForIntegration string = ''
 param includeSampleFunction bool = false
 
 var skuTier = skuName == 'Y1' ? 'Dynamic' : 'Elastic'
-var funcAppServicePlanName = '${name}-asp'
+var funcAppServicePlanName = 'plan-${name}'
 var funcStorageName = 's${replace(name, '-', '')}'
-var funcAppInsName = '${name}-appins'
+var funcAppInsName = 'appins-${name}'
 var createSourceControl = !empty(funcDeployRepoUrl)
 var createNetworkConfig = !empty(subnetIdForIntegration)
 
