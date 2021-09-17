@@ -1,7 +1,7 @@
 # Secured Web Application on Azure
 [![CI](https://github.com/nianton/azure-secure-website/actions/workflows/main.yml/badge.svg)](https://github.com/nianton/azure-secure-website/actions/workflows/main.yml)
 
-[![Deploy To Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fnianton%2Fazure-secure-website%2Fmain%2Fdeploy%2Fazure.deploy.json)
+[![Deploy To Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fnianton%2Fazure-secure-website%2Fmain%2Fdeploy%2Fazure.sub.deploy.json)
 
 > NOTE: This work in progress -not finalized yet.
 
