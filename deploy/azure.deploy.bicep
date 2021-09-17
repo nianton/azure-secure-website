@@ -57,12 +57,12 @@ var resourceNames = {
 }
 
 // Vnet configuration
-var virtualNetwork_CIDR = '10.200.1.0/24'
-var subnet1_CIDR = '10.200.1.0/26'
-var subnet2_CIDR = '10.200.1.64/26'
-var subnet3_CIDR = '10.200.1.128/26'
-var subnet4_CIDR = '10.200.1.192/27'
-var subnet5_CIDR = '10.200.1.224/27'
+var virtualNetworkCIDR = '10.200.1.0/24'
+var defaultSnetCIDR = '10.200.1.0/26'
+var appSnetCIDR = '10.200.1.64/26'
+var devSnetCIDR = '10.200.1.128/26'
+var integratedSnetCIDR = '10.200.1.192/27'
+var bastionSnetCIDR = '10.200.1.224/27'
 
 var secretNames = {
   dataStorageConnectionString: 'dataStorageConnectionString'
@@ -85,33 +85,33 @@ module vnet 'modules/vnet.module.bicep' = {
   name: 'vnet-${resourceNames.vnet}'
   params: {
     name: resourceNames.vnet
-    addressPrefix: virtualNetwork_CIDR
+    addressPrefix: virtualNetworkCIDR
     includeBastion: true
     location: location
     tags: defaultTags
     defaultSnet: {
       name: resourceNames.defaultSnet
       properties: {
-        addressPrefix: subnet1_CIDR
+        addressPrefix: defaultSnetCIDR
       }
     }
     appSnet: {
       name: resourceNames.appSnet
       properties: {
-        addressPrefix: subnet2_CIDR
+        addressPrefix: appSnetCIDR
         privateEndpointNetworkPolicies: 'Disabled'
       }
     }
     devOpsSnet: {
       name: resourceNames.devSnet
       properties: {
-        addressPrefix: subnet3_CIDR
+        addressPrefix: devSnetCIDR
       }
     }
     integratedSnet: {
       name: resourceNames.integratedSnet
       properties: {
-        addressPrefix: subnet4_CIDR
+        addressPrefix: integratedSnetCIDR
         delegations: [
           {
             name: 'delegation'
@@ -125,7 +125,7 @@ module vnet 'modules/vnet.module.bicep' = {
     }
     bastionSnet: {
       properties: {
-        addressPrefix: subnet5_CIDR
+        addressPrefix: bastionSnetCIDR
         privateEndpointNetworkPolicies: 'Disabled'
       }
     }

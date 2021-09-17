@@ -1,7 +1,7 @@
 param name string
 param tags object = {}
-param registrationEnabled bool = true
-param vnetId string
+param registrationEnabled bool = false
+param vnetIds array
 
 resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: name
@@ -9,16 +9,15 @@ resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   tags: tags  
 }
 
-resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  name: '${privateDnsZone.name}/${privateDnsZone.name}-link'
-  tags: tags
-  properties: {
+module privateDnsZoneLinks 'privateDnsZoneLink.module.bicep' = if (!empty(vnetIds)) {
+  name: 'PrivateDnsZoneLinks-Deployment'
+  params: {
+    privateDnsZoneName: privateDnsZone.name
+    vnetIds: vnetIds
     registrationEnabled: registrationEnabled
-    virtualNetwork: {
-      id: vnetId
-    }
+    tags: tags
   }
 }
 
 output id string = privateDnsZone.id
-output linkId string = privateDnsZoneLink.id
+output linkIds array = privateDnsZoneLinks.outputs.ids

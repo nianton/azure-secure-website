@@ -63,4 +63,4 @@ output defaultSnetId string = vnet.properties.subnets[0].id
 output appSnetId string = vnet.properties.subnets[1].id
 output devOpsSnetId string = vnet.properties.subnets[2].id
 output integratedSnetId string = vnet.properties.subnets[3].id
-output bastionSnetId string = includeBastion ? vnet.properties.subnets[4].id : json('null')
+output bastionSnetId string = includeBastion ? vnet.properties.subnets[4].id : ''

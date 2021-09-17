@@ -15,6 +15,10 @@ var rgName = empty(resourceGroupName) ? 'rg-${project}-${environment}' : resourc
 resource group 'Microsoft.Resources/resourceGroups@2020-06-01' = {
   name: rgName
   location: location
+  tags: {
+    environment: environment
+    project: project
+  }  
 }
 
 module naming 'modules/naming.module.bicep' = {

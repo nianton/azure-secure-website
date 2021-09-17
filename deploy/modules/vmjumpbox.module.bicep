@@ -173,4 +173,4 @@ resource customScriptExtension 'Microsoft.Compute/virtualMachines/extensions@202
   }
 }
 
-output hostname string = includePublicIp ? pip.properties.dnsSettings.fqdn : json('null')
+output hostname string = includePublicIp ? pip.properties.dnsSettings.fqdn : ''
