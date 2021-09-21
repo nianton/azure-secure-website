@@ -6,12 +6,6 @@ param naming object
 @description('Container to move the files from the scheduled run')
 param archiveContainerName string = 'archive'
 
-@description('The function application repository to be deployed -change if forked')
-param functionAppRepoUrl string = 'https://github.com/nianton/azstorage-to-s3'
-
-@description('The function application repository branch to be deployed')
-param functionAppRepoBranch string = 'main'
-
 @description('Whether to use private endpoints to expose the Azure Functions and WebApp')
 param usePrivateLinks bool = true
 
@@ -37,6 +31,8 @@ param azureFunctionPlanSkuName string = 'EP1'
 @secure()
 @description('Jumpbox vm password')
 param jumpboxPassword string
+
+param tags object = {}
 
 // Resource names - establish naming convention
 var resourceNames = {
@@ -71,10 +67,10 @@ var secretNames = {
 }
 
 // Default tags to be added to all resources
-var defaultTags = {
+var defaultTags = union({
   environment: environment
   project: project
-}
+}, tags)
 
 // Containers for data storage account
 var containerNames = [
