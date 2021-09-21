@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.613.9944",
-      "templateHash": "8350230486956596582"
+      "templateHash": "1059161459285896392"
     }
   },
   "parameters": {
@@ -29,20 +29,6 @@
       "defaultValue": "archive",
       "metadata": {
         "description": "Container to move the files from the scheduled run"
-      }
-    },
-    "functionAppRepoUrl": {
-      "type": "string",
-      "defaultValue": "https://github.com/nianton/azstorage-to-s3",
-      "metadata": {
-        "description": "The function application repository to be deployed -change if forked"
-      }
-    },
-    "functionAppRepoBranch": {
-      "type": "string",
-      "defaultValue": "main",
-      "metadata": {
-        "description": "The function application repository branch to be deployed"
       }
     },
     "usePrivateLinks": {
@@ -88,6 +74,10 @@
       "metadata": {
         "description": "Jumpbox vm password"
       }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {}
     }
   },
   "functions": [],
@@ -119,10 +109,7 @@
       "serviceBusConnectionString": "serviceBusConnectionstring",
       "mySqlConnectionString": "mySqlConnectionString"
     },
-    "defaultTags": {
-      "environment": "[parameters('environment')]",
-      "project": "[parameters('project')]"
-    },
+    "defaultTags": "[union(createObject('environment', parameters('environment'), 'project', parameters('project')), parameters('tags'))]",
     "containerNames": [
       "[parameters('archiveContainerName')]"
     ]
